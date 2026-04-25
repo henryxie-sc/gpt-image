@@ -5,6 +5,7 @@ import {
   BadgePercent,
   CheckCircle2,
   Clock3,
+  Download,
   HardDrive,
   Image,
   KeyRound,
@@ -576,9 +577,22 @@ export function Workstation() {
 
           {job?.result ? (
             <section className="result-panel">
-              <div className="section-title">
-                <HardDrive size={17} />
-                本地结果
+              <div className="result-header">
+                <div>
+                  <div className="section-title">
+                    <HardDrive size={17} />
+                    本地结果
+                  </div>
+                  <p>Render 免费实例不保证长期保存，建议生成后及时下载。</p>
+                </div>
+                <a
+                  className="download-button"
+                  download
+                  href={downloadUrl(job.result.localUrl)}
+                >
+                  <Download size={17} />
+                  下载图片
+                </a>
               </div>
               <img alt="生成结果" className="result-image" src={job.result.localUrl} />
               <div className="result-path">{job.result.localPath}</div>
@@ -635,6 +649,17 @@ export function Workstation() {
                     <span className={`history-status ${item.status}`}>
                       {statusLabels[item.status]}
                     </span>
+                    {item.result?.localUrl ? (
+                      <a
+                        className="history-download"
+                        download
+                        href={downloadUrl(item.result.localUrl)}
+                        onClick={(event) => event.stopPropagation()}
+                        title="下载图片"
+                      >
+                        <Download size={15} />
+                      </a>
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -661,6 +686,10 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function downloadUrl(localUrl: string) {
+  return `${localUrl}${localUrl.includes("?") ? "&" : "?"}download=1`;
 }
 
 function isPollableStatus(status: JobStatus) {

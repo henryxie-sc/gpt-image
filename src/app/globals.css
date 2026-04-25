@@ -296,6 +296,7 @@ select:focus {
 
 .upload-button,
 .save-key-button,
+.download-button,
 .primary-action {
   display: inline-flex;
   align-items: center;
@@ -480,6 +481,30 @@ select:focus {
   gap: 12px;
 }
 
+.result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.result-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.download-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 13px;
+  background: var(--teal);
+  color: #ffffff;
+  text-decoration: none;
+}
+
 .result-image {
   display: block;
   width: min(100%, 820px);
@@ -559,7 +584,7 @@ select:focus {
 
 .history-item {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
+  grid-template-columns: 54px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -569,6 +594,18 @@ select:focus {
   background: #fffefa;
   color: var(--ink);
   text-align: left;
+}
+
+.history-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f1e6;
+  color: var(--teal-dark);
 }
 
 .history-item.active {
@@ -700,9 +737,14 @@ select:focus {
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
-  .history-status {
+  .history-status,
+  .history-download {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .result-header {
+    flex-direction: column;
   }
 }
 

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,18 +14,23 @@ type RouteContext = {
 };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { path } = await context.params;
+  const { path: assetPath } = await context.params;
 
   try {
-    const filePath = await resolveAssetPath(path);
+    const filePath = await resolveAssetPath(assetPath);
     const file = await readFile(filePath);
-
-    return new Response(file, {
-      headers: {
-        "Content-Type": contentTypeForFileName(filePath),
-        "Cache-Control": "private, max-age=31536000, immutable"
-      }
+    const url = new URL(_request.url);
+    const isDownload = url.searchParams.get("download") === "1";
+    const headers = new Headers({
+      "Content-Type": contentTypeForFileName(filePath),
+      "Cache-Control": "private, max-age=31536000, immutable"
     });
+
+    if (isDownload) {
+      headers.set("Content-Disposition", `attachment; filename="${path.basename(filePath)}"`);
+    }
+
+    return new Response(file, { headers });
   } catch {
     return NextResponse.json({ error: "资源不存在。" }, { status: 404 });
   }
