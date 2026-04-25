@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PROMPT_PRESETS,
   buildPrompt,
+  isPromptPresetId,
   splitSellingPoints,
   supportsResolution,
   validateJobInput,
@@ -36,6 +38,35 @@ describe("ecommerce helpers", () => {
   it("blocks 4K for unsupported sizes", () => {
     expect(supportsResolution("4:5", "4k")).toBe(false);
     expect(supportsResolution("16:9", "4k")).toBe(true);
+  });
+
+  it("exposes prompt presets and validates preset ids", () => {
+    expect(PROMPT_PRESETS.default.name).toBe("默认电商通用");
+    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("白底主图增强");
+    expect(isPromptPresetId("scene-pro")).toBe(true);
+    expect(isPromptPresetId("not-exists")).toBe(false);
+  });
+
+  it("includes selected preset guidance in prompt", () => {
+    const prompt = buildPrompt({
+      productName: "便携恒温电热水杯",
+      sellingPoints: "45°C 恒温，316 不锈钢",
+      templateId: "main",
+      promptPresetId: "white-bg-pro"
+    });
+
+    expect(prompt).toContain("提示词风格：白底主图增强");
+    expect(prompt).toContain("纯白或极浅灰背景，商品居中偏大");
+  });
+
+  it("falls back to default preset when prompt preset is omitted", () => {
+    const prompt = buildPrompt({
+      productName: "便携恒温电热水杯",
+      sellingPoints: "45°C 恒温，316 不锈钢",
+      templateId: "main"
+    });
+
+    expect(prompt).toContain("提示词风格：默认电商通用");
   });
 
   it("validates job input and upload files", () => {

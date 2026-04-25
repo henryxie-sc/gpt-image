@@ -37,11 +37,42 @@ export type TemplateDefinition = {
   guidance: string;
 };
 
+export const PROMPT_PRESETS = {
+  default: {
+    id: "default",
+    name: "默认电商通用",
+    guidance: "突出商品主体，画面真实自然，适合主流电商平台展示。"
+  },
+  "white-bg-pro": {
+    id: "white-bg-pro",
+    name: "白底主图增强",
+    guidance: "使用纯白或极浅灰背景，商品居中偏大，正面或微 45 度展示，柔和棚拍光，边缘清晰。"
+  },
+  "studio-premium": {
+    id: "studio-premium",
+    name: "高级棚拍增强",
+    guidance: "使用浅灰或中性高级背景，柔和漫射光，保留真实阴影与材质细节，整体简洁高级。"
+  },
+  "scene-pro": {
+    id: "scene-pro",
+    name: "生活场景增强",
+    guidance: "把商品放入符合使用逻辑的真实生活场景中，场景精致克制，商品仍然是视觉主体。"
+  },
+  "detail-banner": {
+    id: "detail-banner",
+    name: "详情横图增强",
+    guidance: "横版构图，商品位于左侧或中间偏左，右侧预留干净留白，方便后期排版卖点文案。"
+  }
+} as const;
+
+export type PromptPresetId = keyof typeof PROMPT_PRESETS;
+
 export type BuildPromptInput = {
   productName: string;
   sellingPoints: string;
   promoText?: string;
   templateId: TemplateId;
+  promptPresetId?: PromptPresetId;
 };
 
 export type JobInput = BuildPromptInput & {
@@ -95,6 +126,7 @@ export const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
 };
 
 export const TEMPLATE_LIST = Object.values(TEMPLATES);
+export const PROMPT_PRESET_LIST = Object.values(PROMPT_PRESETS);
 
 const FOUR_K_SIZES = new Set<ApiImageSize>([
   "16:9",
@@ -107,6 +139,10 @@ const FOUR_K_SIZES = new Set<ApiImageSize>([
 
 export function isTemplateId(value: unknown): value is TemplateId {
   return typeof value === "string" && value in TEMPLATES;
+}
+
+export function isPromptPresetId(value: unknown): value is PromptPresetId {
+  return typeof value === "string" && value in PROMPT_PRESETS;
 }
 
 export function isImageSize(value: unknown): value is ImageSize {
@@ -130,6 +166,7 @@ export function splitSellingPoints(value: string) {
 
 export function buildPrompt(input: BuildPromptInput) {
   const template = TEMPLATES[input.templateId];
+  const preset = PROMPT_PRESETS[input.promptPresetId ?? "default"];
   const productName = input.productName.trim();
   const sellingPoints = splitSellingPoints(input.sellingPoints);
   const promoText = input.promoText?.trim();
@@ -140,6 +177,7 @@ export function buildPrompt(input: BuildPromptInput) {
     sellingPoints.length > 0 ? `核心卖点：${sellingPoints.join("、")}` : "",
     promoText ? `促销/标签文案：${promoText}` : "",
     `画面用途：${template.name}。${template.guidance}`,
+    `提示词风格：${preset.name}。${preset.guidance}`,
     "必须严格参考上传图片中的商品外观、颜色、材质、包装、logo 位置和结构比例，不要改变商品款式。",
     "在画面中自然加入清晰可读的中文卖点或促销文字，避免错别字、乱码、无关英文和虚假参数。",
     "画面干净，商品主体突出，光线真实，质感清晰，适合国内电商审核与展示。",

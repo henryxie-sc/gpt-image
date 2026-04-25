@@ -23,12 +23,13 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   IMAGE_SIZES,
+  PROMPT_PRESET_LIST,
   RESOLUTIONS,
   TEMPLATE_LIST,
   TEMPLATES,
   supportsResolution
 } from "@/lib/ecommerce";
-import type { ImageSize, Resolution, TemplateId } from "@/lib/ecommerce";
+import type { ImageSize, PromptPresetId, Resolution, TemplateId } from "@/lib/ecommerce";
 
 type ConfigState = {
   hasApiKey: boolean;
@@ -90,6 +91,7 @@ export function Workstation() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [promoText, setPromoText] = useState("");
   const [templateId, setTemplateId] = useState<TemplateId>("main");
+  const [promptPresetId, setPromptPresetId] = useState<PromptPresetId>("default");
   const [size, setSize] = useState<ImageSize>("1:1");
   const [resolution, setResolution] = useState<Resolution>("1k");
   const [files, setFiles] = useState<File[]>([]);
@@ -342,6 +344,7 @@ export function Workstation() {
       formData.set("sellingPoints", sellingPoints);
       formData.set("promoText", promoText);
       formData.set("templateId", templateId);
+      formData.set("promptPresetId", promptPresetId);
       formData.set("size", size);
       formData.set("resolution", resolution);
 
@@ -374,7 +377,6 @@ export function Workstation() {
     <main className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">APIMart · GPT-Image-2</p>
           <h1>电商作图工作台</h1>
         </div>
         <div className="header-status">
@@ -492,6 +494,23 @@ export function Workstation() {
               ))}
             </div>
           </div>
+
+          <label className="field">
+            <span>
+              <Sparkles size={16} />
+              提示词风格
+            </span>
+            <select
+              value={promptPresetId}
+              onChange={(event) => setPromptPresetId(event.target.value as PromptPresetId)}
+            >
+              {PROMPT_PRESET_LIST.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <div className="two-col">
             <label className="field">

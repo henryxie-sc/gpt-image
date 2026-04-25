@@ -6,12 +6,13 @@ import { createImageGeneration, hasApimartApiKey, uploadImage } from "@/lib/apim
 import {
   buildPrompt,
   isImageSize,
+  isPromptPresetId,
   isResolution,
   isTemplateId,
   validateJobInput,
   validateReferenceFiles
 } from "@/lib/ecommerce";
-import type { ImageSize, Resolution, TemplateId } from "@/lib/ecommerce";
+import type { ImageSize, PromptPresetId, Resolution, TemplateId } from "@/lib/ecommerce";
 import {
   createJobId,
   listJobSummaries,
@@ -35,6 +36,7 @@ type ParsedForm = {
   sellingPoints: string;
   promoText: string;
   templateId: TemplateId;
+  promptPresetId: PromptPresetId;
   size: ImageSize;
   resolution: Resolution;
   files: File[];
@@ -146,11 +148,17 @@ async function parseForm(request: NextRequest): Promise<ParsedForm> {
   const sellingPoints = getText(formData, "sellingPoints");
   const promoText = getText(formData, "promoText");
   const templateId = getText(formData, "templateId");
+  const promptPresetId = getText(formData, "promptPresetId") || "default";
   const size = getText(formData, "size");
   const resolution = getText(formData, "resolution");
   const files = formData.getAll("images").filter(isFile);
 
-  if (!isTemplateId(templateId) || !isImageSize(size) || !isResolution(resolution)) {
+  if (
+    !isTemplateId(templateId) ||
+    !isPromptPresetId(promptPresetId) ||
+    !isImageSize(size) ||
+    !isResolution(resolution)
+  ) {
     throw new Error("表单参数无效。");
   }
 
@@ -159,6 +167,7 @@ async function parseForm(request: NextRequest): Promise<ParsedForm> {
     sellingPoints,
     promoText,
     templateId,
+    promptPresetId,
     size,
     resolution,
     files
