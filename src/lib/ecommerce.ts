@@ -40,27 +40,27 @@ export type TemplateDefinition = {
 export const PROMPT_PRESETS = {
   default: {
     id: "default",
-    name: "默认电商通用",
+    name: "电商图",
     guidance: "突出商品主体，画面真实自然，适合主流电商平台展示。"
   },
   "white-bg-pro": {
     id: "white-bg-pro",
-    name: "白底主图增强",
+    name: "白底主图",
     guidance: "使用纯白或极浅灰背景，商品居中偏大，正面或微 45 度展示，柔和棚拍光，边缘清晰。"
   },
   "studio-premium": {
     id: "studio-premium",
-    name: "高级棚拍增强",
+    name: "高级棚拍",
     guidance: "使用浅灰或中性高级背景，柔和漫射光，保留真实阴影与材质细节，整体简洁高级。"
   },
   "scene-pro": {
     id: "scene-pro",
-    name: "生活场景增强",
+    name: "生活场景",
     guidance: "把商品放入符合使用逻辑的真实生活场景中，场景精致克制，商品仍然是视觉主体。"
   },
   "detail-banner": {
     id: "detail-banner",
-    name: "详情横图增强",
+    name: "详情横图",
     guidance: "横版构图，商品位于左侧或中间偏左，右侧预留干净留白，方便后期排版卖点文案。"
   }
 } as const;

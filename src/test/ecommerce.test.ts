@@ -42,8 +42,11 @@ describe("ecommerce helpers", () => {
   });
 
   it("exposes prompt presets and validates preset ids", () => {
-    expect(PROMPT_PRESETS.default.name).toBe("默认电商通用");
-    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("白底主图增强");
+    expect(PROMPT_PRESETS.default.name).toBe("电商图");
+    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("白底主图");
+    expect(PROMPT_PRESETS["studio-premium"].name).toBe("高级棚拍");
+    expect(PROMPT_PRESETS["scene-pro"].name).toBe("生活场景");
+    expect(PROMPT_PRESETS["detail-banner"].name).toBe("详情横图");
     expect(isPromptPresetId("scene-pro")).toBe(true);
     expect(isPromptPresetId("not-exists")).toBe(false);
   });
@@ -71,7 +74,7 @@ describe("ecommerce helpers", () => {
       size: "16:9"
     });
 
-    expect(prompt).toContain("提示词风格：详情横图增强");
+    expect(prompt).toContain("提示词风格：详情横图");
   });
 
   it("includes selected preset guidance in prompt", () => {
@@ -82,7 +85,7 @@ describe("ecommerce helpers", () => {
       promptPresetId: "white-bg-pro"
     });
 
-    expect(prompt).toContain("提示词风格：白底主图增强");
+    expect(prompt).toContain("提示词风格：白底主图");
     expect(prompt).toContain("纯白或极浅灰背景，商品居中偏大");
   });
 
@@ -93,7 +96,7 @@ describe("ecommerce helpers", () => {
       templateId: "main"
     });
 
-    expect(prompt).toContain("提示词风格：默认电商通用");
+    expect(prompt).toContain("提示词风格：电商图");
   });
 
   it("validates job input and upload files", () => {
