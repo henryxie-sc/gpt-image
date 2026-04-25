@@ -5,8 +5,8 @@ import {
   BadgePercent,
   CheckCircle2,
   Clock3,
-  Trash2,
   Download,
+  FileImage,
   HardDrive,
   Image,
   KeyRound,
@@ -16,6 +16,7 @@ import {
   RotateCw,
   Save,
   Sparkles,
+  Trash2,
   UploadCloud
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -103,6 +104,7 @@ export function Workstation() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeTemplate = TEMPLATES[templateId];
+  const selectedJobTemplate = job ? TEMPLATES[job.templateId] : activeTemplate;
   const isBusy =
     isSubmitting ||
     job?.status === "uploading" ||
@@ -127,9 +129,9 @@ export function Workstation() {
 
   const previewList = useMemo(
     () =>
-      previews.map((url, index) => ({
-        url,
-        name: files[index]?.name || `reference-${index + 1}`
+      Array.from({ length: 4 }, (_, index) => ({
+        url: previews[index],
+        name: files[index]?.name || `参考图 ${index + 1}`
       })),
     [files, previews]
   );
@@ -370,46 +372,62 @@ export function Workstation() {
 
   return (
     <main className="app-shell">
+      <header className="app-header">
+        <div>
+          <p className="eyebrow">APIMart · GPT-Image-2</p>
+          <h1>电商作图工作台</h1>
+        </div>
+        <div className="header-status">
+          <span className={config?.hasApiKey ? "status-pill ok" : "status-pill warn"}>
+            {config?.hasApiKey ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+            {config?.hasApiKey ? "Key 已配置" : "Key 未配置"}
+          </span>
+          <span className="format-pill">{config?.model || "gpt-image-2"}</span>
+        </div>
+      </header>
+
       <section className="workspace">
         <form className="control-panel" onSubmit={onSubmit}>
           <header className="panel-header">
             <div>
-              <p className="eyebrow">APIMart · GPT-Image-2</p>
-              <h1>电商作图工作台</h1>
+              <p className="eyebrow">生成设置</p>
+              <h2>商品素材</h2>
             </div>
-            <span className={config?.hasApiKey ? "status-pill ok" : "status-pill warn"}>
-              {config?.hasApiKey ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-              {config?.hasApiKey ? "Key 已配置" : "Key 未配置"}
-            </span>
           </header>
 
-          <div className="key-panel">
-            <label className="field">
+          <details className="key-panel">
+            <summary>
               <span>
                 <KeyRound size={16} />
-                APIMart API Key
+                系统配置
               </span>
-              <div className="key-row">
-                <input
-                  autoComplete="off"
-                  value={apiKey}
-                  onChange={(event) => setApiKey(event.target.value)}
-                  placeholder={config?.hasApiKey ? "已配置，输入新 Key 可替换" : "粘贴你的 APIMart Key"}
-                  type="password"
-                />
-                <button
-                  className="save-key-button"
-                  disabled={!apiKey.trim() || isSavingKey}
-                  type="button"
-                  onClick={onSaveApiKey}
-                >
-                  {isSavingKey ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
-                  保存
-                </button>
-              </div>
-            </label>
+              <em>{config?.hasApiKey ? "Key 已配置" : "需要配置 Key"}</em>
+            </summary>
+            <div className="key-body">
+              <label className="field">
+                <span>APIMart API Key</span>
+                <div className="key-row">
+                  <input
+                    autoComplete="off"
+                    value={apiKey}
+                    onChange={(event) => setApiKey(event.target.value)}
+                    placeholder={config?.hasApiKey ? "已配置，输入新 Key 可替换" : "粘贴你的 APIMart Key"}
+                    type="password"
+                  />
+                  <button
+                    className="save-key-button"
+                    disabled={!apiKey.trim() || isSavingKey}
+                    type="button"
+                    onClick={onSaveApiKey}
+                  >
+                    {isSavingKey ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
+                    保存
+                  </button>
+                </div>
+              </label>
+            </div>
             {configMessage ? <div className="message success">{configMessage}</div> : null}
-          </div>
+          </details>
 
           <div className="field-grid">
             <label className="field">
@@ -514,15 +532,31 @@ export function Workstation() {
               ref={fileInputRef}
               type="file"
             />
-            <button
-              className="upload-button"
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <UploadCloud size={19} />
-              选择参考图
-            </button>
-            <span>{files.length}/4</span>
+            <div className="upload-head">
+              <button
+                className="upload-button"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <UploadCloud size={19} />
+                选择参考图
+              </button>
+              <span>{files.length}/4</span>
+            </div>
+            <div className="upload-grid">
+              {previewList.map((preview, index) => (
+                <div className={`upload-slot ${preview.url ? "filled" : ""}`} key={preview.name}>
+                  {preview.url ? (
+                    <img alt={preview.name} src={preview.url} />
+                  ) : (
+                    <>
+                      <FileImage size={20} />
+                      <span>{index + 1}</span>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <button className="primary-action" disabled={!canSubmit} type="submit">
@@ -539,31 +573,59 @@ export function Workstation() {
         </form>
 
         <section className="preview-panel">
-          <div className="preview-header">
-            <div>
-              <p className="eyebrow">{activeTemplate.name}</p>
-              <h2>{productName || "商品预览"}</h2>
-            </div>
-            <span className="format-pill">
-              {size} · {resolution.toUpperCase()}
-            </span>
-          </div>
-
-          <div className="preview-grid">
-            {previewList.length > 0 ? (
-              previewList.map((preview) => (
-                <figure className="reference-tile" key={preview.url}>
-                  <img alt={preview.name} src={preview.url} />
-                  <figcaption>{preview.name}</figcaption>
-                </figure>
-              ))
-            ) : (
-              <div className="empty-state">
-                <Image size={32} />
-                <span>参考图</span>
+          <section className="canvas-panel">
+            <div className="preview-header">
+              <div>
+                <p className="eyebrow">{selectedJobTemplate.name}</p>
+                <h2>{job?.productName || productName || "商品预览"}</h2>
               </div>
-            )}
-          </div>
+              <span className="format-pill">
+                {job?.size || size} · {(job?.resolution || resolution).toUpperCase()}
+              </span>
+            </div>
+
+            <div className={`result-canvas ${job?.result ? "has-result" : ""}`}>
+              {job?.result ? (
+                <img alt="生成结果" className="result-image" src={job.result.localUrl} />
+              ) : (
+                <div className="canvas-empty">
+                  <Image size={38} />
+                  <strong>等待生成结果</strong>
+                  <span>上传参考图并填写商品信息后，生成图会显示在这里。</span>
+                </div>
+              )}
+            </div>
+
+            {job?.result ? (
+              <div className="result-toolbar">
+                <div>
+                  <div className="section-title">
+                    <HardDrive size={17} />
+                    本地结果
+                  </div>
+                  <p>图片不保证长期保存，建议生成后及时下载。</p>
+                </div>
+                <div className="result-actions">
+                  <a
+                    className="download-button"
+                    download
+                    href={downloadUrl(job.result.localUrl)}
+                  >
+                    <Download size={17} />
+                    下载图片
+                  </a>
+                  <button
+                    className="delete-button"
+                    type="button"
+                    onClick={() => void deleteJob(job.id)}
+                  >
+                    <Trash2 size={17} />
+                    删除
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </section>
 
           <div className="job-panel">
             <div className="job-topline">
@@ -595,6 +657,14 @@ export function Workstation() {
               </div>
             </dl>
 
+            <div className="step-row" aria-label="生成流程">
+              {["参考图", "提交", "生成", "下载"].map((step, index) => (
+                <span className={stepClass(index, job?.status, Boolean(job?.result))} key={step}>
+                  {step}
+                </span>
+              ))}
+            </div>
+
             {job?.status === "failed" && job.error ? (
               <div className="failure-detail" role="alert">
                 <AlertTriangle size={16} />
@@ -602,40 +672,6 @@ export function Workstation() {
               </div>
             ) : null}
           </div>
-
-          {job?.result ? (
-            <section className="result-panel">
-              <div className="result-header">
-                <div>
-                  <div className="section-title">
-                    <HardDrive size={17} />
-                    本地结果
-                  </div>
-                  <p>图片不保证长期保存，建议生成后及时下载。</p>
-                </div>
-                <div className="result-actions">
-                  <a
-                    className="download-button"
-                    download
-                    href={downloadUrl(job.result.localUrl)}
-                  >
-                    <Download size={17} />
-                    下载图片
-                  </a>
-                  <button
-                    className="delete-button"
-                    type="button"
-                    onClick={() => void deleteJob(job.id)}
-                  >
-                    <Trash2 size={17} />
-                    删除
-                  </button>
-                </div>
-              </div>
-              <img alt="生成结果" className="result-image" src={job.result.localUrl} />
-              <div className="result-path">{job.result.localPath}</div>
-            </section>
-          ) : null}
 
           <section className="history-panel">
             <div className="history-header">
@@ -720,6 +756,21 @@ export function Workstation() {
       </section>
     </main>
   );
+}
+
+function stepClass(index: number, status: JobStatus | undefined, hasResult: boolean) {
+  const activeIndex =
+    status === "failed"
+      ? 2
+      : hasResult || status === "completed"
+        ? 3
+        : status === "processing"
+          ? 2
+          : status === "submitted"
+            ? 1
+            : 0;
+
+  return index <= activeIndex ? "step-item active" : "step-item";
 }
 
 function formatDateTime(value: string) {
