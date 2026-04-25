@@ -72,6 +72,7 @@ export type BuildPromptInput = {
   sellingPoints: string;
   promoText?: string;
   templateId: TemplateId;
+  size?: ImageSize;
   promptPresetId?: PromptPresetId;
 };
 
@@ -128,6 +129,12 @@ export const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
 export const TEMPLATE_LIST = Object.values(TEMPLATES);
 export const PROMPT_PRESET_LIST = Object.values(PROMPT_PRESETS);
 
+const PROMPT_PRESET_IDS_BY_SIZE: Record<ImageSize, PromptPresetId[]> = {
+  "1:1": ["white-bg-pro", "studio-premium"],
+  "4:5": ["scene-pro", "studio-premium"],
+  "16:9": ["detail-banner", "studio-premium"]
+};
+
 const FOUR_K_SIZES = new Set<ApiImageSize>([
   "16:9",
   "9:16",
@@ -143,6 +150,29 @@ export function isTemplateId(value: unknown): value is TemplateId {
 
 export function isPromptPresetId(value: unknown): value is PromptPresetId {
   return typeof value === "string" && value in PROMPT_PRESETS;
+}
+
+export function getPromptPresetsBySize(size: ImageSize) {
+  return PROMPT_PRESET_IDS_BY_SIZE[size].map((presetId) => PROMPT_PRESETS[presetId]);
+}
+
+export function getDefaultPromptPresetId(size?: ImageSize): PromptPresetId {
+  if (!size) {
+    return "default";
+  }
+
+  return PROMPT_PRESET_IDS_BY_SIZE[size][0] ?? "default";
+}
+
+export function isPromptPresetCompatibleWithSize(
+  promptPresetId: PromptPresetId,
+  size?: ImageSize
+) {
+  if (!size) {
+    return true;
+  }
+
+  return PROMPT_PRESET_IDS_BY_SIZE[size].includes(promptPresetId);
 }
 
 export function isImageSize(value: unknown): value is ImageSize {
@@ -166,7 +196,10 @@ export function splitSellingPoints(value: string) {
 
 export function buildPrompt(input: BuildPromptInput) {
   const template = TEMPLATES[input.templateId];
-  const preset = PROMPT_PRESETS[input.promptPresetId ?? "default"];
+  const resolvedPresetId = isPromptPresetCompatibleWithSize(input.promptPresetId ?? "default", input.size)
+    ? input.promptPresetId ?? getDefaultPromptPresetId(input.size)
+    : getDefaultPromptPresetId(input.size);
+  const preset = PROMPT_PRESETS[resolvedPresetId];
   const productName = input.productName.trim();
   const sellingPoints = splitSellingPoints(input.sellingPoints);
   const promoText = input.promoText?.trim();
@@ -204,6 +237,16 @@ export function validateJobInput(input: Partial<JobInput>, imageCount: number) {
 
   if (!isImageSize(input.size)) {
     errors.push("请选择有效的图片比例。");
+  }
+
+  if (
+    input.promptPresetId &&
+    input.promptPresetId !== "default" &&
+    isImageSize(input.size) &&
+    isPromptPresetId(input.promptPresetId) &&
+    !isPromptPresetCompatibleWithSize(input.promptPresetId, input.size)
+  ) {
+    errors.push("当前提示词风格与所选图片比例不匹配，请重新选择。");
   }
 
   if (!isResolution(input.resolution)) {

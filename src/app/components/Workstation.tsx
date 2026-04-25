@@ -23,7 +23,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   IMAGE_SIZES,
-  PROMPT_PRESET_LIST,
+  getDefaultPromptPresetId,
+  getPromptPresetsBySize,
   RESOLUTIONS,
   TEMPLATE_LIST,
   TEMPLATES,
@@ -91,7 +92,7 @@ export function Workstation() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [promoText, setPromoText] = useState("");
   const [templateId, setTemplateId] = useState<TemplateId>("main");
-  const [promptPresetId, setPromptPresetId] = useState<PromptPresetId>("default");
+  const [promptPresetId, setPromptPresetId] = useState<PromptPresetId>(getDefaultPromptPresetId("1:1"));
   const [size, setSize] = useState<ImageSize>("1:1");
   const [resolution, setResolution] = useState<Resolution>("1k");
   const [files, setFiles] = useState<File[]>([]);
@@ -137,6 +138,7 @@ export function Workstation() {
       })),
     [files, previews]
   );
+  const availablePromptPresets = useMemo(() => getPromptPresetsBySize(size), [size]);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,16 +284,19 @@ export function Workstation() {
 
   function selectTemplate(nextTemplateId: TemplateId) {
     const template = TEMPLATES[nextTemplateId];
+    const nextSize = template.defaultSize;
     setTemplateId(nextTemplateId);
-    setSize(template.defaultSize);
+    setSize(nextSize);
+    setPromptPresetId(getDefaultPromptPresetId(nextSize));
 
-    if (!supportsResolution(template.defaultSize, resolution)) {
+    if (!supportsResolution(nextSize, resolution)) {
       setResolution("1k");
     }
   }
 
   function selectSize(nextSize: ImageSize) {
     setSize(nextSize);
+    setPromptPresetId(getDefaultPromptPresetId(nextSize));
 
     if (!supportsResolution(nextSize, resolution)) {
       setResolution("1k");
@@ -504,7 +509,7 @@ export function Workstation() {
               value={promptPresetId}
               onChange={(event) => setPromptPresetId(event.target.value as PromptPresetId)}
             >
-              {PROMPT_PRESET_LIST.map((preset) => (
+              {availablePromptPresets.map((preset) => (
                 <option key={preset.id} value={preset.id}>
                   {preset.name}
                 </option>

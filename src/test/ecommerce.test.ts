@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   PROMPT_PRESETS,
   buildPrompt,
+  getPromptPresetsBySize,
   isPromptPresetId,
   splitSellingPoints,
   supportsResolution,
@@ -45,6 +46,32 @@ describe("ecommerce helpers", () => {
     expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("白底主图增强");
     expect(isPromptPresetId("scene-pro")).toBe(true);
     expect(isPromptPresetId("not-exists")).toBe(false);
+  });
+
+  it("returns prompt preset options based on image size", () => {
+    expect(getPromptPresetsBySize("1:1").map((preset) => preset.id)).toEqual([
+      "white-bg-pro",
+      "studio-premium"
+    ]);
+    expect(getPromptPresetsBySize("4:5").map((preset) => preset.id)).toEqual([
+      "scene-pro",
+      "studio-premium"
+    ]);
+    expect(getPromptPresetsBySize("16:9").map((preset) => preset.id)).toEqual([
+      "detail-banner",
+      "studio-premium"
+    ]);
+  });
+
+  it("falls back to ratio-specific preset when prompt preset is omitted", () => {
+    const prompt = buildPrompt({
+      productName: "便携恒温电热水杯",
+      sellingPoints: "45°C 恒温，316 不锈钢",
+      templateId: "detail",
+      size: "16:9"
+    });
+
+    expect(prompt).toContain("提示词风格：详情横图增强");
   });
 
   it("includes selected preset guidance in prompt", () => {
