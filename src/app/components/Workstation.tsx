@@ -5,6 +5,7 @@ import {
   BadgePercent,
   CheckCircle2,
   Clock3,
+  Trash2,
   Download,
   HardDrive,
   Image,
@@ -245,6 +246,33 @@ export function Workstation() {
       }
 
       return undefined;
+    }
+  }
+
+  async function deleteJob(jobId: string) {
+    const item = history.find((historyItem) => historyItem.id === jobId);
+    const name = item?.productName || "这个任务";
+
+    if (!window.confirm(`确定删除「${name}」吗？本地结果图和历史记录都会删除。`)) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "删除失败。");
+      }
+
+      setHistory((current) => current.filter((historyItem) => historyItem.id !== jobId));
+      setJob((current) => (current?.id === jobId ? null : current));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "删除失败。");
     }
   }
 
@@ -583,16 +611,26 @@ export function Workstation() {
                     <HardDrive size={17} />
                     本地结果
                   </div>
-                  <p>Render 免费实例不保证长期保存，建议生成后及时下载。</p>
+                  <p>图片不保证长期保存，建议生成后及时下载。</p>
                 </div>
-                <a
-                  className="download-button"
-                  download
-                  href={downloadUrl(job.result.localUrl)}
-                >
-                  <Download size={17} />
-                  下载图片
-                </a>
+                <div className="result-actions">
+                  <a
+                    className="download-button"
+                    download
+                    href={downloadUrl(job.result.localUrl)}
+                  >
+                    <Download size={17} />
+                    下载图片
+                  </a>
+                  <button
+                    className="delete-button"
+                    type="button"
+                    onClick={() => void deleteJob(job.id)}
+                  >
+                    <Trash2 size={17} />
+                    删除
+                  </button>
+                </div>
               </div>
               <img alt="生成结果" className="result-image" src={job.result.localUrl} />
               <div className="result-path">{job.result.localPath}</div>
@@ -660,6 +698,17 @@ export function Workstation() {
                         <Download size={15} />
                       </a>
                     ) : null}
+                    <button
+                      className="history-delete"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void deleteJob(item.id);
+                      }}
+                      title="删除任务"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </button>
                 ))}
               </div>

@@ -8,6 +8,7 @@ import {
   normalizeTaskStatus
 } from "@/lib/apimart";
 import {
+  deleteJobRecord,
   downloadResultImage,
   readJobRecord,
   toClientJob,
@@ -83,6 +84,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ job: toClientJob(updated) });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 502 });
+  }
+}
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const { id } = await context.params;
+
+  try {
+    await deleteJobRecord(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
   }
 }
 

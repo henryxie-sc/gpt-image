@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GET as getJob } from "@/app/api/jobs/[id]/route";
+import { DELETE as deleteJob, GET as getJob } from "@/app/api/jobs/[id]/route";
 import { GET as listJobs, POST as createJob } from "@/app/api/jobs/route";
 
 describe("jobs api", () => {
@@ -114,6 +114,17 @@ describe("jobs api", () => {
     expect(listed.jobs[0].id).toBe(created.job.id);
     expect(listed.jobs[0].status).toBe("completed");
     expect(listed.jobs[0].result?.localUrl).toContain("/api/assets/");
+
+    const deleteResponse = await deleteJob(new Request("http://localhost/api/jobs/test") as never, {
+      params: Promise.resolve({ id: created.job.id })
+    });
+    const afterDeleteResponse = await listJobs();
+    const afterDelete = (await afterDeleteResponse.json()) as {
+      jobs: Array<{ id: string }>;
+    };
+
+    expect(deleteResponse.status).toBe(200);
+    expect(afterDelete.jobs).toHaveLength(0);
   });
 
   it("returns APIMart errors without hiding the local job record", async () => {

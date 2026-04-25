@@ -297,6 +297,7 @@ select:focus {
 .upload-button,
 .save-key-button,
 .download-button,
+.delete-button,
 .primary-action {
   display: inline-flex;
   align-items: center;
@@ -505,6 +506,21 @@ select:focus {
   text-decoration: none;
 }
 
+.delete-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 13px;
+  background: #fff0ed;
+  color: #9f3224;
+}
+
+.result-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+}
+
 .result-image {
   display: block;
   width: min(100%, 820px);
@@ -584,7 +600,7 @@ select:focus {
 
 .history-item {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto auto;
+  grid-template-columns: 54px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -596,7 +612,8 @@ select:focus {
   text-align: left;
 }
 
-.history-download {
+.history-download,
+.history-delete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -606,6 +623,10 @@ select:focus {
   border-radius: 8px;
   background: #f7f1e6;
   color: var(--teal-dark);
+}
+
+.history-delete {
+  color: #9f3224;
 }
 
 .history-item.active {
@@ -738,12 +759,14 @@ select:focus {
   }
 
   .history-status,
-  .history-download {
+  .history-download,
+  .history-delete {
     grid-column: 2;
     justify-self: start;
   }
 
-  .result-header {
+  .result-header,
+  .result-actions {
     flex-direction: column;
   }
 }

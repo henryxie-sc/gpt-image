@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type { UploadImageInput } from "@/lib/apimart";
@@ -132,6 +132,10 @@ export async function writeJobRecord(job: JobRecord) {
 export async function readJobRecord(jobId: string) {
   const content = await readFile(metadataPath(jobId), "utf8");
   return JSON.parse(content) as JobRecord;
+}
+
+export async function deleteJobRecord(jobId: string) {
+  await rm(getJobDir(jobId), { recursive: true, force: true });
 }
 
 export async function listJobSummaries(limit = 50): Promise<JobSummary[]> {
