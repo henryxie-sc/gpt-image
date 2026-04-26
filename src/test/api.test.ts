@@ -156,7 +156,9 @@ function makeRequest() {
   formData.set("productName", "便携恒温电热水杯");
   formData.set("sellingPoints", "45°C 恒温，316 不锈钢");
   formData.set("promoText", "新品首发");
+  formData.set("customPrompt", "基于参考图生成白底电商主图，商品居中，保留真实材质。");
   formData.set("templateId", "main");
+  formData.set("promptPresetId", "white-bg-pro");
   formData.set("size", "1:1");
   formData.set("resolution", "1k");
   formData.append(

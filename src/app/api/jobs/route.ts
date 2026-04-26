@@ -35,6 +35,7 @@ type ParsedForm = {
   productName: string;
   sellingPoints: string;
   promoText: string;
+  customPrompt: string;
   templateId: TemplateId;
   promptPresetId: PromptPresetId;
   size: ImageSize;
@@ -147,8 +148,9 @@ async function parseForm(request: NextRequest): Promise<ParsedForm> {
   const productName = getText(formData, "productName");
   const sellingPoints = getText(formData, "sellingPoints");
   const promoText = getText(formData, "promoText");
+  const customPrompt = getText(formData, "customPrompt");
   const templateId = getText(formData, "templateId");
-  const promptPresetId = getText(formData, "promptPresetId") || "default";
+  const promptPresetId = getText(formData, "promptPresetId") || "white-bg-pro";
   const size = getText(formData, "size");
   const resolution = getText(formData, "resolution");
   const files = formData.getAll("images").filter(isFile);
@@ -166,6 +168,7 @@ async function parseForm(request: NextRequest): Promise<ParsedForm> {
     productName,
     sellingPoints,
     promoText,
+    customPrompt,
     templateId,
     promptPresetId,
     size,

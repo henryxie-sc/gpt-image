@@ -63,6 +63,7 @@ export type JobSummary = Pick<
   | "createdAt"
   | "updatedAt"
   | "productName"
+  | "prompt"
   | "templateId"
   | "size"
   | "resolution"
@@ -194,6 +195,7 @@ function toJobSummary(job: ClientJob): JobSummary {
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     productName: job.productName,
+    prompt: job.prompt,
     templateId: job.templateId,
     size: job.size,
     resolution: job.resolution,

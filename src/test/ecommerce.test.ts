@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  IMAGE_SIZES,
   PROMPT_PRESETS,
   buildPrompt,
+  getDefaultPromptPresetId,
   getPromptPresetsBySize,
   isPromptPresetId,
   removeFileAtIndex,
@@ -13,20 +15,48 @@ import {
 } from "@/lib/ecommerce";
 
 describe("ecommerce helpers", () => {
-  it("builds a prompt for Chinese ecommerce image generation", () => {
+  it("returns the custom prompt directly", () => {
     const prompt = buildPrompt({
-      productName: "便携恒温电热水杯",
-      sellingPoints: "45°C 恒温，316 不锈钢\nUSB-C 充电",
-      promoText: "新品首发",
-      templateId: "scene",
-      referenceImageCount: 1
+      productName: "",
+      sellingPoints: "",
+      templateId: "main",
+      customPrompt: "基于参考图生成白底电商主图，商品居中，保留真实材质。"
     });
 
-    expect(prompt).toContain("便携恒温电热水杯");
-    expect(prompt).toContain("45°C 恒温、316 不锈钢、USB-C 充电");
-    expect(prompt).toContain("新品首发");
-    expect(prompt).toContain("场景图");
-    expect(prompt).toContain("不要改变商品款式");
+    expect(prompt).toBe("基于参考图生成白底电商主图，商品居中，保留真实材质。");
+  });
+
+  it("requires a prompt before generation", () => {
+    expect(
+      validateJobInput(
+        {
+          productName: "",
+          sellingPoints: "",
+          templateId: "main",
+          size: "1:1",
+          resolution: "1k",
+          customPrompt: ""
+        },
+        0
+      )
+    ).toContain("请填写提示词内容。");
+  });
+
+  it("allows prompt-only generation without product fields or reference images", () => {
+    expect(
+      validateJobInput(
+        {
+          productName: "",
+          sellingPoints: "",
+          templateId: "main",
+          size: "1:1",
+          resolution: "1k",
+          customPrompt: "生成一张白底商品主图。",
+          promptPresetId: "white-bg-pro"
+        },
+        0
+      )
+    ).toEqual([]);
   });
 
   it("splits selling points across common Chinese separators", () => {
@@ -38,17 +68,37 @@ describe("ecommerce helpers", () => {
     ]);
   });
 
+  it("supports all available API image sizes except auto in the size selector", () => {
+    expect(IMAGE_SIZES).toEqual([
+      "1:1",
+      "3:2",
+      "2:3",
+      "4:3",
+      "3:4",
+      "5:4",
+      "4:5",
+      "16:9",
+      "9:16",
+      "2:1",
+      "1:2",
+      "21:9",
+      "9:21"
+    ]);
+  });
+
   it("blocks 4K for unsupported sizes", () => {
     expect(supportsResolution("4:5", "4k")).toBe(false);
     expect(supportsResolution("16:9", "4k")).toBe(true);
   });
 
-  it("exposes prompt presets and validates preset ids", () => {
-    expect(PROMPT_PRESETS.default.name).toBe("电商图");
-    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("电商主图");
-    expect(PROMPT_PRESETS["studio-premium"].name).toBe("高级棚拍");
-    expect(PROMPT_PRESETS["scene-pro"].name).toBe("生活场景");
-    expect(PROMPT_PRESETS["detail-banner"].name).toBe("详情横图");
+  it("exposes preset prompts and validates preset ids", () => {
+    expect(Object.keys(PROMPT_PRESETS)).toHaveLength(18);
+    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("1. 标准白底主图");
+    expect(PROMPT_PRESETS["studio-premium"].prompt).toContain("浅灰无缝背景");
+    expect(PROMPT_PRESETS["scene-pro"].defaultSize).toBe("4:5");
+    expect(PROMPT_PRESETS["detail-banner"].templateId).toBe("detail");
+    expect(PROMPT_PRESETS["hand-use"].prompt).toContain("不要多手指");
+    expect(PROMPT_PRESETS["home-storage"].name).toBe("18. 家居收纳类");
     expect(isPromptPresetId("scene-pro")).toBe(true);
     expect(isPromptPresetId("not-exists")).toBe(false);
   });
@@ -68,50 +118,27 @@ describe("ecommerce helpers", () => {
     ]);
   });
 
-  it("falls back to ratio-specific preset when prompt preset is omitted", () => {
-    const prompt = buildPrompt({
-      productName: "便携恒温电热水杯",
-      sellingPoints: "45°C 恒温，316 不锈钢",
-      templateId: "detail",
-      size: "16:9"
-    });
-
-    expect(prompt).toContain("提示词风格：详情横图");
+  it("chooses sensible default presets by size", () => {
+    expect(getDefaultPromptPresetId("1:1")).toBe("white-bg-pro");
+    expect(getDefaultPromptPresetId("4:5")).toBe("scene-pro");
+    expect(getDefaultPromptPresetId("16:9")).toBe("detail-banner");
   });
 
-  it("includes selected preset guidance in prompt", () => {
-    const prompt = buildPrompt({
-      productName: "便携恒温电热水杯",
-      sellingPoints: "45°C 恒温，316 不锈钢",
-      templateId: "main",
-      promptPresetId: "white-bg-pro",
-      referenceImageCount: 1
-    });
-
-    expect(prompt).toContain("提示词风格：电商主图");
-    expect(prompt).toContain("干净的纯色或浅色背景，商品居中偏大");
-  });
-
-  it("builds a prompt without reference images when none are uploaded", () => {
-    const prompt = buildPrompt({
-      productName: "便携恒温电热水杯",
-      sellingPoints: "45°C 恒温，316 不锈钢",
-      templateId: "main",
-      size: "1:1"
-    });
-
-    expect(prompt).toContain("在没有上传参考图时，可根据商品名称、卖点和画面用途自由生成符合要求的商品视觉");
-    expect(prompt).not.toContain("必须严格参考上传图片中的商品外观");
-  });
-
-  it("falls back to default preset when prompt preset is omitted", () => {
-    const prompt = buildPrompt({
-      productName: "便携恒温电热水杯",
-      sellingPoints: "45°C 恒温，316 不锈钢",
-      templateId: "main"
-    });
-
-    expect(prompt).toContain("提示词风格：电商图");
+  it("allows preset prompt text to be used with any selected output ratio", () => {
+    expect(
+      validateJobInput(
+        {
+          productName: "",
+          sellingPoints: "",
+          templateId: "detail",
+          size: "9:16",
+          resolution: "1k",
+          customPrompt: "请生成一张详情页首屏横图，但实际输出使用竖版比例。",
+          promptPresetId: "detail-banner"
+        },
+        0
+      )
+    ).toEqual([]);
   });
 
   it("removes a selected reference image by index", () => {
@@ -129,30 +156,16 @@ describe("ecommerce helpers", () => {
     ]);
   });
 
-  it("allows generating without reference images", () => {
-    expect(
-      validateJobInput(
-        {
-          productName: "商品",
-          sellingPoints: "卖点",
-          templateId: "main",
-          size: "1:1",
-          resolution: "1k"
-        },
-        0
-      )
-    ).toEqual([]);
-  });
-
   it("validates job input and upload files", () => {
     expect(
       validateJobInput(
         {
-          productName: "商品",
-          sellingPoints: "卖点",
+          productName: "",
+          sellingPoints: "",
           templateId: "main",
           size: "4:5",
-          resolution: "4k"
+          resolution: "4k",
+          customPrompt: "生成场景图。"
         },
         1
       )

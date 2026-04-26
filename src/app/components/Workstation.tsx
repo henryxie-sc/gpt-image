@@ -2,17 +2,13 @@
 
 import {
   AlertTriangle,
-  BadgePercent,
-  CheckCircle2,
   Clock3,
   Download,
   FileImage,
   HardDrive,
   Image,
   KeyRound,
-  Layers,
   Loader2,
-  Package,
   RotateCw,
   Save,
   Sparkles,
@@ -23,11 +19,11 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   getDefaultPromptPresetId,
-  getPromptPresetsBySize,
   removeFileAtIndex,
   IMAGE_SIZES,
+  PROMPT_PRESET_LIST,
+  PROMPT_PRESETS,
   RESOLUTIONS,
-  TEMPLATE_LIST,
   TEMPLATES,
   supportsResolution
 } from "@/lib/ecommerce";
@@ -44,6 +40,7 @@ type JobStatus = "uploading" | "submitted" | "processing" | "completed" | "faile
 type ClientJob = {
   id: string;
   productName: string;
+  prompt: string;
   templateId: TemplateId;
   size: ImageSize;
   resolution: Resolution;
@@ -67,6 +64,7 @@ type JobSummary = Pick<
   ClientJob,
   | "id"
   | "productName"
+  | "prompt"
   | "templateId"
   | "size"
   | "resolution"
@@ -89,11 +87,9 @@ const statusLabels: Record<JobStatus, string> = {
 
 export function Workstation() {
   const [config, setConfig] = useState<ConfigState | null>(null);
-  const [productName, setProductName] = useState("");
-  const [sellingPoints, setSellingPoints] = useState("");
-  const [promoText, setPromoText] = useState("");
+  const [promptPresetId, setPromptPresetId] = useState<PromptPresetId | "">("");
+  const [customPrompt, setCustomPrompt] = useState("");
   const [templateId, setTemplateId] = useState<TemplateId>("main");
-  const [promptPresetId, setPromptPresetId] = useState<PromptPresetId>(getDefaultPromptPresetId("1:1"));
   const [size, setSize] = useState<ImageSize>("1:1");
   const [resolution, setResolution] = useState<Resolution>("1k");
   const [files, setFiles] = useState<File[]>([]);
@@ -107,6 +103,7 @@ export function Workstation() {
   const [isSavingKey, setIsSavingKey] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const activePreset = promptPresetId ? PROMPT_PRESETS[promptPresetId] : undefined;
   const activeTemplate = TEMPLATES[templateId];
   const selectedJobTemplate = job ? TEMPLATES[job.templateId] : activeTemplate;
   const isBusy =
@@ -116,12 +113,10 @@ export function Workstation() {
     job?.status === "processing";
   const canSubmit =
     Boolean(config?.hasApiKey) &&
-    productName.trim() &&
-    sellingPoints.trim() &&
+    customPrompt.trim() &&
     supportsResolution(size, resolution) &&
     !isBusy;
 
-  const progress = job ? Math.max(0, Math.min(100, job.progress)) : 0;
   const activeHistory = useMemo(
     () => history.filter((item) => isPollableStatus(item.status) && Boolean(item.taskId)),
     [history]
@@ -138,7 +133,6 @@ export function Workstation() {
       })),
     [files, previews]
   );
-  const availablePromptPresets = useMemo(() => getPromptPresetsBySize(size), [size]);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,21 +276,15 @@ export function Workstation() {
     }
   }
 
-  function selectTemplate(nextTemplateId: TemplateId) {
-    const template = TEMPLATES[nextTemplateId];
-    const nextSize = template.defaultSize;
-    setTemplateId(nextTemplateId);
-    setSize(nextSize);
-    setPromptPresetId(getDefaultPromptPresetId(nextSize));
-
-    if (!supportsResolution(nextSize, resolution)) {
-      setResolution("1k");
-    }
+  function selectPromptPreset(nextPromptPresetId: PromptPresetId) {
+    const preset = PROMPT_PRESETS[nextPromptPresetId];
+    setPromptPresetId(nextPromptPresetId);
+    setCustomPrompt(preset.prompt);
+    setTemplateId(preset.templateId);
   }
 
   function selectSize(nextSize: ImageSize) {
     setSize(nextSize);
-    setPromptPresetId(getDefaultPromptPresetId(nextSize));
 
     if (!supportsResolution(nextSize, resolution)) {
       setResolution("1k");
@@ -353,11 +341,12 @@ export function Workstation() {
 
     try {
       const formData = new FormData();
-      formData.set("productName", productName);
-      formData.set("sellingPoints", sellingPoints);
-      formData.set("promoText", promoText);
+      formData.set("productName", promptTitle(customPrompt, activePreset?.name || "提示词任务"));
+      formData.set("sellingPoints", "");
+      formData.set("promoText", "");
+      formData.set("customPrompt", customPrompt);
       formData.set("templateId", templateId);
-      formData.set("promptPresetId", promptPresetId);
+      formData.set("promptPresetId", promptPresetId || getDefaultPromptPresetId(size));
       formData.set("size", size);
       formData.set("resolution", resolution);
 
@@ -391,13 +380,6 @@ export function Workstation() {
       <header className="app-header">
         <div>
           <h1>电商作图工作台</h1>
-        </div>
-        <div className="header-status">
-          <span className={config?.hasApiKey ? "status-pill ok" : "status-pill warn"}>
-            {config?.hasApiKey ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-            {config?.hasApiKey ? "Key 已配置" : "Key 未配置"}
-          </span>
-          <span className="format-pill">{config?.model || "gpt-image-2"}</span>
         </div>
       </header>
 
@@ -444,85 +426,47 @@ export function Workstation() {
             {configMessage ? <div className="message success">{configMessage}</div> : null}
           </details>
 
-          <div className="field-grid">
-            <label className="field">
-              <span>
-                <Package size={16} />
-                商品名称
-              </span>
-              <input
-                value={productName}
-                onChange={(event) => setProductName(event.target.value)}
-                placeholder="例：便携恒温电热水杯"
-                maxLength={80}
-              />
-            </label>
-
-            <label className="field">
-              <span>
-                <Layers size={16} />
-                核心卖点
-              </span>
-              <textarea
-                value={sellingPoints}
-                onChange={(event) => setSellingPoints(event.target.value)}
-                placeholder="例：45°C 恒温、316 不锈钢、USB-C 充电"
-                rows={4}
-                maxLength={360}
-              />
-            </label>
-
-            <label className="field">
-              <span>
-                <BadgePercent size={16} />
-                促销标签
-              </span>
-              <input
-                value={promoText}
-                onChange={(event) => setPromoText(event.target.value)}
-                placeholder="例：新品首发 / 限时到手价"
-                maxLength={80}
-              />
-            </label>
-          </div>
-
-          <div className="section-block">
-            <div className="section-title">
-              <Image size={17} />
-              模板
-            </div>
-            <div className="template-grid">
-              {TEMPLATE_LIST.map((template) => (
-                <button
-                  className={`template-option ${template.id === templateId ? "selected" : ""}`}
-                  key={template.id}
-                  type="button"
-                  onClick={() => selectTemplate(template.id)}
-                  title={template.name}
-                >
-                  <strong>{template.shortName}</strong>
-                  <span>{template.defaultSize}</span>
-                  <em>{template.usage}</em>
-                </button>
-              ))}
-            </div>
-          </div>
+          <label className="field">
+            <span>
+              <Sparkles size={16} />
+              提示词
+            </span>
+            <textarea
+              value={customPrompt}
+              onChange={(event) => setCustomPrompt(event.target.value)}
+              placeholder="请写清楚用途、背景、构图、卖点文字、不要改变的商品细节。"
+              rows={10}
+              maxLength={2400}
+            />
+          </label>
 
           <label className="field">
             <span>
               <Sparkles size={16} />
-              提示词风格
+              预设提示词
             </span>
             <select
               value={promptPresetId}
-              onChange={(event) => setPromptPresetId(event.target.value as PromptPresetId)}
+              onChange={(event) => {
+                const nextPresetId = event.target.value;
+
+                if (nextPresetId) {
+                  selectPromptPreset(nextPresetId as PromptPresetId);
+                } else {
+                  setPromptPresetId("");
+                }
+              }}
             >
-              {availablePromptPresets.map((preset) => (
+              <option value="">不使用预设，手动填写提示词</option>
+              {PROMPT_PRESET_LIST.map((preset) => (
                 <option key={preset.id} value={preset.id}>
-                  {preset.name}
+                  {preset.name} · 推荐 {preset.defaultSize} · {preset.usage}
                 </option>
               ))}
             </select>
+            <p className="prompt-hint">
+              选择预设会填充上方提示词，可继续手动修改。实际出图比例以下方选择为准。
+            </p>
           </label>
 
           <div className="two-col">
@@ -565,19 +509,30 @@ export function Workstation() {
               type="file"
             />
             <div className="upload-head">
-              <button
-                className="upload-button"
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
+              <div
+                className="upload-label"
+                aria-hidden="true"
               >
                 <UploadCloud size={19} />
-                选择参考图
-              </button>
+                参考图
+              </div>
               <span>{files.length > 0 ? `${files.length}/4` : "可选，最多 4 张"}</span>
             </div>
             <div className="upload-grid">
               {previewList.map((preview, index) => (
-                <div className={`upload-slot ${preview.url ? "filled" : ""}`} key={`${preview.name}-${index}`}>
+                <div
+                  className={`upload-slot ${preview.url ? "filled" : ""}`}
+                  key={`${preview.name}-${index}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                >
                   {preview.url ? (
                     <>
                       <img alt={preview.name} src={preview.url} />
@@ -585,7 +540,10 @@ export function Workstation() {
                         aria-label={`删除${preview.name}`}
                         className="upload-remove-button"
                         type="button"
-                        onClick={() => removeSelectedFile(index)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeSelectedFile(index);
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -603,7 +561,7 @@ export function Workstation() {
 
           <button className="primary-action" disabled={!canSubmit} type="submit">
             {isBusy ? <Loader2 className="spin" size={18} /> : <Sparkles size={18} />}
-            {isBusy ? "处理中" : "生成商品图"}
+            {isBusy ? "处理中" : "生成图片"}
           </button>
 
           {error ? (
@@ -619,7 +577,7 @@ export function Workstation() {
             <div className="preview-header">
               <div>
                 <p className="eyebrow">{selectedJobTemplate.name}</p>
-                <h2>{job?.productName || productName || "商品预览"}</h2>
+                <h2>{job?.productName || activePreset?.name || "商品预览"}</h2>
               </div>
               <span className="format-pill">
                 {job?.size || size} · {(job?.resolution || resolution).toUpperCase()}
@@ -633,7 +591,9 @@ export function Workstation() {
                 <div className="canvas-empty">
                   <Image size={38} />
                   <strong>等待生成结果</strong>
-                  <span>上传参考图并填写商品信息后，生成图会显示在这里。</span>
+                  <span>
+                    选择预设或直接填写自定义提示词，生成图会显示在这里。
+                  </span>
                 </div>
               )}
             </div>
@@ -669,51 +629,12 @@ export function Workstation() {
             ) : null}
           </section>
 
-          <div className="job-panel">
-            <div className="job-topline">
-              <div>
-                <p className="eyebrow">任务状态</p>
-                <h3>{job ? statusLabels[job.status] : "待提交"}</h3>
-              </div>
-              {job?.status === "processing" || job?.status === "submitted" ? (
-                <RotateCw className="spin" size={18} />
-              ) : null}
+          {job?.status === "failed" && job.error ? (
+            <div className="failure-detail" role="alert">
+              <AlertTriangle size={16} />
+              <span>{job.error}</span>
             </div>
-
-            <div className="progress-track" aria-label="任务进度">
-              <span style={{ width: `${progress}%` }} />
-            </div>
-
-            <dl className="job-meta">
-              <div>
-                <dt>模型</dt>
-                <dd>{config?.model || "gpt-image-2"}</dd>
-              </div>
-              <div>
-                <dt>任务 ID</dt>
-                <dd>{job?.taskId || "-"}</dd>
-              </div>
-              <div>
-                <dt>存储目录</dt>
-                <dd>{config?.storageDir || "-"}</dd>
-              </div>
-            </dl>
-
-            <div className="step-row" aria-label="生成流程">
-              {["参考图", "提交", "生成", "下载"].map((step, index) => (
-                <span className={stepClass(index, job?.status, Boolean(job?.result))} key={step}>
-                  {step}
-                </span>
-              ))}
-            </div>
-
-            {job?.status === "failed" && job.error ? (
-              <div className="failure-detail" role="alert">
-                <AlertTriangle size={16} />
-                <span>{job.error}</span>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
 
           <section className="history-panel">
             <div className="history-header">
@@ -738,11 +659,18 @@ export function Workstation() {
             {history.length > 0 ? (
               <div className="history-list">
                 {history.map((item) => (
-                  <button
+                  <div
                     className={`history-item ${job?.id === item.id ? "active" : ""}`}
                     key={item.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setJob(item as ClientJob)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setJob(item as ClientJob);
+                      }
+                    }}
                   >
                     <div className="history-thumb">
                       {item.result?.localUrl ? (
@@ -752,7 +680,8 @@ export function Workstation() {
                       )}
                     </div>
                     <div className="history-main">
-                      <strong>{item.productName || "未命名商品"}</strong>
+                      <strong>{item.productName || "未命名任务"}</strong>
+                      <p title={item.prompt}>{item.prompt || item.productName || "暂无提示词"}</p>
                       <span>
                         {TEMPLATES[item.templateId].shortName} · {item.size} ·{" "}
                         {item.resolution.toUpperCase()}
@@ -787,7 +716,7 @@ export function Workstation() {
                     >
                       <Trash2 size={15} />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -798,21 +727,6 @@ export function Workstation() {
       </section>
     </main>
   );
-}
-
-function stepClass(index: number, status: JobStatus | undefined, hasResult: boolean) {
-  const activeIndex =
-    status === "failed"
-      ? 2
-      : hasResult || status === "completed"
-        ? 3
-        : status === "processing"
-          ? 2
-          : status === "submitted"
-            ? 1
-            : 0;
-
-  return index <= activeIndex ? "step-item active" : "step-item";
 }
 
 function formatDateTime(value: string) {
@@ -832,6 +746,19 @@ function formatDateTime(value: string) {
 
 function downloadUrl(localUrl: string) {
   return `${localUrl}${localUrl.includes("?") ? "&" : "?"}download=1`;
+}
+
+function promptTitle(prompt: string, fallback: string) {
+  const firstLine = prompt
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) {
+    return fallback;
+  }
+
+  return firstLine.length > 24 ? `${firstLine.slice(0, 24)}...` : firstLine;
 }
 
 function isPollableStatus(status: JobStatus) {

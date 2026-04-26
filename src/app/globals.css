@@ -271,6 +271,14 @@ textarea {
   padding: 12px;
 }
 
+.prompt-hint {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -355,6 +363,15 @@ select:focus {
   font-weight: 900;
 }
 
+.upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  color: #303640;
+  font-weight: 850;
+}
+
 .upload-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -374,8 +391,19 @@ select:focus {
   border-radius: 8px;
   background: #ffffff;
   color: var(--muted);
+  cursor: pointer;
   font-size: 0.75rem;
   font-weight: 900;
+}
+
+.upload-slot:hover {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+.upload-slot:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 .upload-slot.filled {
@@ -414,7 +442,6 @@ select:focus {
   object-fit: cover;
 }
 
-.upload-button,
 .save-key-button,
 .download-button,
 .delete-button,
@@ -430,7 +457,6 @@ select:focus {
   text-decoration: none;
 }
 
-.upload-button,
 .ghost-button {
   min-height: 38px;
   border: 1px solid var(--line);
@@ -718,6 +744,18 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.history-main p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: #303640;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.42;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .history-main strong {
