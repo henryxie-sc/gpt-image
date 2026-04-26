@@ -45,8 +45,8 @@ export const PROMPT_PRESETS = {
   },
   "white-bg-pro": {
     id: "white-bg-pro",
-    name: "白底主图",
-    guidance: "使用纯白或极浅灰背景，商品居中偏大，正面或微 45 度展示，柔和棚拍光，边缘清晰。"
+    name: "电商主图",
+    guidance: "使用干净的纯色或浅色背景，商品居中偏大，正面或微 45 度展示，柔和棚拍光，边缘清晰。"
   },
   "studio-premium": {
     id: "studio-premium",
@@ -192,6 +192,14 @@ export function splitSellingPoints(value: string) {
     .split(/[\n,，;；、]+/u)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+export function removeFileAtIndex<T>(files: T[], index: number) {
+  if (index < 0 || index >= files.length) {
+    return files;
+  }
+
+  return files.filter((_, currentIndex) => currentIndex !== index);
 }
 
 export function buildPrompt(input: BuildPromptInput) {

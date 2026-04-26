@@ -5,6 +5,7 @@ import {
   buildPrompt,
   getPromptPresetsBySize,
   isPromptPresetId,
+  removeFileAtIndex,
   splitSellingPoints,
   supportsResolution,
   validateJobInput,
@@ -43,7 +44,7 @@ describe("ecommerce helpers", () => {
 
   it("exposes prompt presets and validates preset ids", () => {
     expect(PROMPT_PRESETS.default.name).toBe("电商图");
-    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("白底主图");
+    expect(PROMPT_PRESETS["white-bg-pro"].name).toBe("电商主图");
     expect(PROMPT_PRESETS["studio-premium"].name).toBe("高级棚拍");
     expect(PROMPT_PRESETS["scene-pro"].name).toBe("生活场景");
     expect(PROMPT_PRESETS["detail-banner"].name).toBe("详情横图");
@@ -85,8 +86,8 @@ describe("ecommerce helpers", () => {
       promptPresetId: "white-bg-pro"
     });
 
-    expect(prompt).toContain("提示词风格：白底主图");
-    expect(prompt).toContain("纯白或极浅灰背景，商品居中偏大");
+    expect(prompt).toContain("提示词风格：电商主图");
+    expect(prompt).toContain("干净的纯色或浅色背景，商品居中偏大");
   });
 
   it("falls back to default preset when prompt preset is omitted", () => {
@@ -97,6 +98,21 @@ describe("ecommerce helpers", () => {
     });
 
     expect(prompt).toContain("提示词风格：电商图");
+  });
+
+  it("removes a selected reference image by index", () => {
+    const files = [
+      { name: "a.png", size: 1, type: "image/png" },
+      { name: "b.png", size: 1, type: "image/png" },
+      { name: "c.png", size: 1, type: "image/png" }
+    ];
+
+    expect(removeFileAtIndex(files, 1).map((file) => file.name)).toEqual(["a.png", "c.png"]);
+    expect(removeFileAtIndex(files, -1).map((file) => file.name)).toEqual([
+      "a.png",
+      "b.png",
+      "c.png"
+    ]);
   });
 
   it("validates job input and upload files", () => {

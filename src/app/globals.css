@@ -362,6 +362,7 @@ select:focus {
 }
 
 .upload-slot {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -375,6 +376,35 @@ select:focus {
   color: var(--muted);
   font-size: 0.75rem;
   font-weight: 900;
+}
+
+.upload-slot.filled {
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.upload-remove-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.72);
+  color: #ffffff;
+}
+
+.upload-remove-button:hover {
+  background: rgba(185, 28, 28, 0.92);
+}
+
+.upload-remove-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
 }
 
 .upload-slot img {

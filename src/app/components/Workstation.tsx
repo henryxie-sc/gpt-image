@@ -22,9 +22,10 @@ import {
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  IMAGE_SIZES,
   getDefaultPromptPresetId,
   getPromptPresetsBySize,
+  removeFileAtIndex,
+  IMAGE_SIZES,
   RESOLUTIONS,
   TEMPLATE_LIST,
   TEMPLATES,
@@ -308,6 +309,14 @@ export function Workstation() {
     setFiles(nextFiles);
   }
 
+  function removeSelectedFile(index: number) {
+    setFiles((current) => removeFileAtIndex(current, index));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
   async function onSaveApiKey() {
     setError("");
     setConfigMessage("");
@@ -569,9 +578,19 @@ export function Workstation() {
             </div>
             <div className="upload-grid">
               {previewList.map((preview, index) => (
-                <div className={`upload-slot ${preview.url ? "filled" : ""}`} key={preview.name}>
+                <div className={`upload-slot ${preview.url ? "filled" : ""}`} key={`${preview.name}-${index}`}>
                   {preview.url ? (
-                    <img alt={preview.name} src={preview.url} />
+                    <>
+                      <img alt={preview.name} src={preview.url} />
+                      <button
+                        aria-label={`删除${preview.name}`}
+                        className="upload-remove-button"
+                        type="button"
+                        onClick={() => removeSelectedFile(index)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
                   ) : (
                     <>
                       <FileImage size={20} />
