@@ -118,7 +118,6 @@ export function Workstation() {
     Boolean(config?.hasApiKey) &&
     productName.trim() &&
     sellingPoints.trim() &&
-    files.length > 0 &&
     supportsResolution(size, resolution) &&
     !isBusy;
 
@@ -574,7 +573,7 @@ export function Workstation() {
                 <UploadCloud size={19} />
                 选择参考图
               </button>
-              <span>{files.length}/4</span>
+              <span>{files.length > 0 ? `${files.length}/4` : "可选，最多 4 张"}</span>
             </div>
             <div className="upload-grid">
               {previewList.map((preview, index) => (

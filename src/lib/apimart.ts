@@ -222,7 +222,7 @@ export async function uploadImage(input: UploadImageInput) {
 
 export async function createImageGeneration(input: {
   prompt: string;
-  imageUrls: string[];
+  imageUrls?: string[];
   size: ApiImageSize;
   resolution: Resolution;
 }) {
@@ -238,7 +238,7 @@ export async function createImageGeneration(input: {
       n: 1,
       size: input.size,
       resolution: input.resolution,
-      image_urls: input.imageUrls,
+      ...(input.imageUrls && input.imageUrls.length > 0 ? { image_urls: input.imageUrls } : {}),
       official_fallback: false
     })
   });

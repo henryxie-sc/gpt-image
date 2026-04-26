@@ -18,7 +18,8 @@ describe("ecommerce helpers", () => {
       productName: "便携恒温电热水杯",
       sellingPoints: "45°C 恒温，316 不锈钢\nUSB-C 充电",
       promoText: "新品首发",
-      templateId: "scene"
+      templateId: "scene",
+      referenceImageCount: 1
     });
 
     expect(prompt).toContain("便携恒温电热水杯");
@@ -83,11 +84,24 @@ describe("ecommerce helpers", () => {
       productName: "便携恒温电热水杯",
       sellingPoints: "45°C 恒温，316 不锈钢",
       templateId: "main",
-      promptPresetId: "white-bg-pro"
+      promptPresetId: "white-bg-pro",
+      referenceImageCount: 1
     });
 
     expect(prompt).toContain("提示词风格：电商主图");
     expect(prompt).toContain("干净的纯色或浅色背景，商品居中偏大");
+  });
+
+  it("builds a prompt without reference images when none are uploaded", () => {
+    const prompt = buildPrompt({
+      productName: "便携恒温电热水杯",
+      sellingPoints: "45°C 恒温，316 不锈钢",
+      templateId: "main",
+      size: "1:1"
+    });
+
+    expect(prompt).toContain("在没有上传参考图时，可根据商品名称、卖点和画面用途自由生成符合要求的商品视觉");
+    expect(prompt).not.toContain("必须严格参考上传图片中的商品外观");
   });
 
   it("falls back to default preset when prompt preset is omitted", () => {
@@ -113,6 +127,21 @@ describe("ecommerce helpers", () => {
       "b.png",
       "c.png"
     ]);
+  });
+
+  it("allows generating without reference images", () => {
+    expect(
+      validateJobInput(
+        {
+          productName: "商品",
+          sellingPoints: "卖点",
+          templateId: "main",
+          size: "1:1",
+          resolution: "1k"
+        },
+        0
+      )
+    ).toEqual([]);
   });
 
   it("validates job input and upload files", () => {

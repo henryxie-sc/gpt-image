@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   }
 
   const jobId = createJobId();
-  const prompt = buildPrompt(parsed);
+  const prompt = buildPrompt({ ...parsed, referenceImageCount: parsed.files.length });
   const persisted = await persistReferenceFiles(jobId, parsed.files);
   const timestamp = nowIso();
 

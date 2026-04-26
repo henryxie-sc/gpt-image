@@ -74,6 +74,7 @@ export type BuildPromptInput = {
   templateId: TemplateId;
   size?: ImageSize;
   promptPresetId?: PromptPresetId;
+  referenceImageCount?: number;
 };
 
 export type JobInput = BuildPromptInput & {
@@ -211,15 +212,20 @@ export function buildPrompt(input: BuildPromptInput) {
   const productName = input.productName.trim();
   const sellingPoints = splitSellingPoints(input.sellingPoints);
   const promoText = input.promoText?.trim();
+  const hasReferenceImages = (input.referenceImageCount ?? 0) > 0;
 
   return [
-    "你是资深国内电商视觉设计师，请基于上传的商品参考图生成一张可直接用于京东、淘宝等平台的商品图。",
+    hasReferenceImages
+      ? "你是资深国内电商视觉设计师，请基于上传的商品参考图生成一张可直接用于京东、淘宝等平台的商品图。"
+      : "你是资深国内电商视觉设计师，请根据商品名称、卖点和画面要求生成一张可直接用于京东、淘宝等平台的商品图。",
     `商品名称：${productName}`,
     sellingPoints.length > 0 ? `核心卖点：${sellingPoints.join("、")}` : "",
     promoText ? `促销/标签文案：${promoText}` : "",
     `画面用途：${template.name}。${template.guidance}`,
     `提示词风格：${preset.name}。${preset.guidance}`,
-    "必须严格参考上传图片中的商品外观、颜色、材质、包装、logo 位置和结构比例，不要改变商品款式。",
+    hasReferenceImages
+      ? "必须严格参考上传图片中的商品外观、颜色、材质、包装、logo 位置和结构比例，不要改变商品款式。"
+      : "在没有上传参考图时，可根据商品名称、卖点和画面用途自由生成符合要求的商品视觉，但要保证构图完整、主体清晰、风格统一。",
     "在画面中自然加入清晰可读的中文卖点或促销文字，避免错别字、乱码、无关英文和虚假参数。",
     "画面干净，商品主体突出，光线真实，质感清晰，适合国内电商审核与展示。",
     "不要添加水印、二维码、联系方式、平台违规标识或无关品牌元素。"
@@ -267,10 +273,6 @@ export function validateJobInput(input: Partial<JobInput>, imageCount: number) {
     !supportsResolution(input.size, input.resolution)
   ) {
     errors.push(`${input.size} 暂不支持 4K 输出，请改用 1K 或 2K。`);
-  }
-
-  if (imageCount < 1) {
-    errors.push("请至少上传 1 张商品参考图。");
   }
 
   if (imageCount > MAX_REFERENCE_IMAGES) {
